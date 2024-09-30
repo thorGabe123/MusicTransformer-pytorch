@@ -5,7 +5,7 @@ num_layers: 4
 event_dim: 388
 fp16:
 pickle_dir: '../MusicTransformer/dataset/pre_processed'
-epochs: 10
+epochs: 100
 batch_size: 8
 load_path:
 dropout: 0.1
