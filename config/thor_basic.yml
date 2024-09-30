@@ -1,0 +1,14 @@
+experiment: 'embedding256-layer6'
+max_seq: 2048
+embedding_dim: 128
+num_layers: 4
+event_dim: 388
+fp16:
+pickle_dir: '../MusicTransformer/dataset/pre_processed'
+epochs: 10
+batch_size: 8
+load_path:
+dropout: 0.1
+debug: 'true'
+l_r: 0.001
+label_smooth: 0.1
