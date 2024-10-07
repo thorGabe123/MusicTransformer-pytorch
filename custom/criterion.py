@@ -3,6 +3,7 @@ from typing import Optional, Any
 import torch
 import torch.nn.functional as F
 from torch.nn.modules.loss import CrossEntropyLoss, _Loss
+from midi_processor.processor import START_IDX
 # from tensorflow.python.keras.optimizer_v2.learning_rate_schedule import LearningRateSchedule
 
 
@@ -27,7 +28,7 @@ class TransformerLoss(CrossEntropyLoss):
 
 class SmoothCrossEntropyLoss(_Loss):
     """
-    https://arxiv.org/abs/1512.00567
+    Custom loss with label smoothing and a penalty for missing Note-Off events after Note-On events.
     """
     __constants__ = ['label_smoothing', 'vocab_size', 'ignore_index', 'reduction']
 
@@ -39,6 +40,9 @@ class SmoothCrossEntropyLoss(_Loss):
         self.vocab_size = vocab_size
         self.ignore_index = ignore_index
         self.input_is_logits = is_logits
+        self.note_on_idx = START_IDX['note_on']
+        self.note_off_idx = START_IDX['note_off']
+        self.time_shift_idx = START_IDX['time_shift']
 
     def forward(self, input, target):
         """
@@ -48,23 +52,81 @@ class SmoothCrossEntropyLoss(_Loss):
         Returns:
             cross entropy: [1]
         """
+        # Smooth the target distribution
         mask = (target == self.ignore_index).unsqueeze(-1)
         q = F.one_hot(target.long(), self.vocab_size).type(torch.float32)
         u = 1.0 / self.vocab_size
         q_prime = (1.0 - self.label_smoothing) * q + self.label_smoothing * u
         q_prime = q_prime.masked_fill(mask, 0)
 
+        # Standard cross-entropy loss
         ce = self.cross_entropy_with_logits(q_prime, input)
+
+        # Apply the penalty for missing Note-Off events within 50 MIDI events
+        penalty = self._apply_note_off_penalty(target)
+
+        # Calculate final loss
         if self.reduction == 'mean':
             lengths = torch.sum(target != self.ignore_index)
-            return ce.sum() / lengths
+            return (ce.sum() + penalty) / lengths
         elif self.reduction == 'sum':
-            return ce.sum()
+            return ce.sum() + penalty
         else:
             raise NotImplementedError
 
+    def _apply_note_off_penalty(self, target):
+        """
+        Penalty for missing Note-Off after a Note-On event within 50 events.
+        """
+        penalty = 0.0
+        batch_size, seq_length = target.shape
+
+        # Iterate through each sequence in the batch
+        for b in range(batch_size):
+            note_on_positions = [-1] * START_IDX['note_off']
+            for t in range(seq_length):
+                window = target[b, t : min(t+50, len(t)-1)]
+                token = window[0]
+                
+
+                # NoteON event multiple times before NoteOff
+
+                # NoteOff event without NoteOn
+
+                if self.note_on_idx <= token < self.note_off_idx:
+                    if note_on_positions[token] == token:
+                        penalty += 1.0
+                    else:
+                        note_on_positions[token] = token
+
+                # Timeshift = 0
+                if token == 256:
+                    penalty += 1.0
+
+                # NoteOn event without NoteOff
+
+                # Two immediately following velocity shifts
+
+                # Detect Note-On event
+                if self.note_on_idx <= token < self.note_off_idx:
+                    note_on_positions.append(t)
+
+                # Apply penalty if there's no corresponding Note-Off within 50 tokens
+                if len(note_on_positions) > 0:
+                    if token >= self.note_off_idx and token < self.time_shift_idx and token == note_on_positions[0] + START_IDX['note off']:  # Note-Off event
+                        note_on_positions.pop(0)  # Remove first Note-On as it is paired
+                    elif t - note_on_positions[0] > 50:  # Check if 50 tokens have passed
+                        penalty += 1.0  # Add penalty for each unpaired Note-On
+                        note_on_positions.pop(0)  # Remove the unpaired Note-On event
+        
+        return penalty
+
     def cross_entropy_with_logits(self, p, q):
+        """
+        Standard cross-entropy calculation with logits.
+        """
         return -torch.sum(p * (q - q.logsumexp(dim=-1, keepdim=True)), dim=-1)
+
 
 
 class CustomSchedule:
