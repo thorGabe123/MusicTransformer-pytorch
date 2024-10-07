@@ -43,6 +43,7 @@ class SmoothCrossEntropyLoss(_Loss):
         self.note_on_idx = START_IDX['note_on']
         self.note_off_idx = START_IDX['note_off']
         self.time_shift_idx = START_IDX['time_shift']
+        self.velocity_idx = START_IDX['velocity']
 
     def forward(self, input, target):
         """
@@ -83,41 +84,53 @@ class SmoothCrossEntropyLoss(_Loss):
 
         # Iterate through each sequence in the batch
         for b in range(batch_size):
-            note_on_positions = [-1] * START_IDX['note_off']
+            last_note_on_time = [-1] * START_IDX['note_off']
+            prev_was_velocity = False
             for t in range(seq_length):
-                window = target[b, t : min(t+50, len(t)-1)]
-                token = window[0]
-                
+                # window = target[b, t : min(t+50, len(t)-1)]
+                token = target[b, t]
 
-                # NoteON event multiple times before NoteOff
-
-                # NoteOff event without NoteOn
-
+                # If NoteOn event
                 if self.note_on_idx <= token < self.note_off_idx:
-                    if note_on_positions[token] == token:
+                    # NoteON event multiple times before NoteOff
+                    if last_note_on_time[token] is not -1:
                         penalty += 1.0
-                    else:
-                        note_on_positions[token] = token
+                    last_note_on_time[token] = t
+                
+                # If NoteOff event
+                if self.note_off_idx <= token < self.time_shift_idx:
+                    # NoteOff event without NoteOn
+                    if last_note_on_time[token - self.note_off_idx] == -1:
+                        penalty += 1.0
+                    # NoteOn event was > 50 tokens ago
+                    elif t - last_note_on_time[token - self.note_off_idx] > 50:
+                        penalty += 1.0
+                    last_note_on_time[token - self.note_off_idx] = -1
 
                 # Timeshift = 0
                 if token == 256:
                     penalty += 1.0
 
-                # NoteOn event without NoteOff
-
                 # Two immediately following velocity shifts
+                if self.velocity_idx <= token:
+                    if prev_was_velocity:
+                        penalty += 1.0
+                    else:
+                        prev_was_velocity = True
+                else:
+                    prev_was_velocity = False
 
-                # Detect Note-On event
-                if self.note_on_idx <= token < self.note_off_idx:
-                    note_on_positions.append(t)
+                # # Detect Note-On event
+                # if self.note_on_idx <= token < self.note_off_idx:
+                #     note_on_positions.append(t)
 
-                # Apply penalty if there's no corresponding Note-Off within 50 tokens
-                if len(note_on_positions) > 0:
-                    if token >= self.note_off_idx and token < self.time_shift_idx and token == note_on_positions[0] + START_IDX['note off']:  # Note-Off event
-                        note_on_positions.pop(0)  # Remove first Note-On as it is paired
-                    elif t - note_on_positions[0] > 50:  # Check if 50 tokens have passed
-                        penalty += 1.0  # Add penalty for each unpaired Note-On
-                        note_on_positions.pop(0)  # Remove the unpaired Note-On event
+                # # Apply penalty if there's no corresponding Note-Off within 50 tokens
+                # if len(note_on_positions) > 0:
+                #     if token >= self.note_off_idx and token < self.time_shift_idx and token == note_on_positions[0] + START_IDX['note off']:  # Note-Off event
+                #         note_on_positions.pop(0)  # Remove first Note-On as it is paired
+                #     elif t - note_on_positions[0] > 50:  # Check if 50 tokens have passed
+                #         penalty += 1.0  # Add penalty for each unpaired Note-On
+                #         note_on_positions.pop(0)  # Remove the unpaired Note-On event
         
         return penalty
 
