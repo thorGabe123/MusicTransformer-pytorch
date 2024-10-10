@@ -55,7 +55,7 @@ def get_event_list(model_path):
     np_arr = output.tolist()
     return np_arr
 
-def get_midi(model_path):
+def get_midi(model_path, midi_path):
     dataset = Data(config.pickle_dir)
     metric_set = MetricsSet({
         'accuracy': CategoricalAccuracy(),
@@ -74,8 +74,8 @@ def get_midi(model_path):
     output = torch.reshape(metrics['bucket'], (batch_x.shape))
     np_arr = output.tolist()
     
-    decode_midi(np_arr, file_path="midi_output\\output.midi")
-    decode_midi(batch_x.tolist(), file_path="midi_output\\input.midi")
+    decode_midi(np_arr, file_path=f"midi_output\\{midi_path}.midi")
+    decode_midi(batch_x.tolist(), file_path=f"midi_output\\{midi_path}-original.midi")
 
 def show_midi_events(event_int_list):
     event_sequence = [Event.from_int(idx) for idx in event_int_list]
