@@ -9,7 +9,8 @@ from data import Data
 from custom.metrics import *
 from custom.criterion import SmoothCrossEntropyLoss, CustomSchedule
 import pretty_midi
-from midi_processor.processor import Event, _event_seq2snote_seq, _merge_note, encode_midi, decode_midi
+import numpy as np
+from midi_processor.processor import Event, _event_seq2snote_seq, _merge_note, encode_midi, decode_midi, START_IDX
 
 def load_model(model_path, config, new=True):
     model = MusicTransformer(
@@ -33,24 +34,6 @@ def get_config(config, configs):
     else:
         config.device = torch.device('cpu')
     return config  
-
-def preprocess_midi(midi_folder, pickle_folder):
-    midi_paths = list(utils.find_files_by_extensions(midi_folder, ['.mid', '.midi']))
-    os.makedirs(midi_folder, exist_ok=True)
-    os.makedirs(pickle_folder, exist_ok=True)
-
-    for path in Bar('Processing').iter(midi_paths):
-        print(' ', end='[{}]'.format(path), flush=True)
-
-        try:
-            data = preprocess_midi(path)
-        except KeyboardInterrupt:
-            print(' Abort')
-        except EOFError:
-            print('EOF Error')
-
-        with open('{}\\{}.pickle'.format('dataset\\preprocessed_midi', path.split('\\')[-1]), 'wb') as f:
-            pickle.dump(data, f)
 
 def get_event_list(model_path):
     dataset = Data(config.pickle_dir)
@@ -96,7 +79,6 @@ def get_midi(model_path):
 
 def show_midi_events(event_int_list):
     event_sequence = [Event.from_int(idx) for idx in event_int_list]
-    event_sequence
     snote_seq = _event_seq2snote_seq(event_sequence)
     note_seq = _merge_note(snote_seq)
     note_seq.sort(key=lambda x:x.start)

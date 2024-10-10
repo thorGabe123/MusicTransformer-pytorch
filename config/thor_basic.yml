@@ -1,5 +1,5 @@
 experiment: 'embedding256-layer6'
-max_seq: 1024
+max_seq: 256
 embedding_dim: 128
 num_layers: 6
 event_dim: 388
