@@ -4,7 +4,7 @@ import pickle
 import numpy as np
 
 from custom.config import config
-
+from midi_processor.processor import START_IDX
 
 class Data:
     def __init__(self, dir_path):
@@ -30,6 +30,13 @@ class Data:
             for file in batch_files
         ]
         return np.array(batch_data)  # batch_size, seq_len
+    
+    def all_data(self, mode='train'):
+        final_data = []
+        for file in self.files:
+            final_data.extend(self._get_seq(file))
+            final_data.extend([START_IDX['end_of_song']])
+        return final_data  # batch_size, seq_len
 
     def seq2seq_batch(self, batch_size, length, mode='train'):
         data = self.batch(batch_size, length * 2, mode)

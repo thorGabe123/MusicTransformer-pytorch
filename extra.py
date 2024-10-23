@@ -28,7 +28,6 @@ def load_model(model_path, config, new=True):
 def get_config(config, configs):
     model_dir = "config"
     config.load(model_dir, configs)
-    config.pickle_dir = "dataset\\temp"
     if torch.cuda.is_available():
         config.device = torch.device('cuda')
     else:
