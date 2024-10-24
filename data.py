@@ -35,7 +35,7 @@ class Data:
         final_data = []
         for file in self.files:
             final_data.extend(self._get_seq(file))
-            final_data.extend([START_IDX['end_of_song']])
+            final_data.append(START_IDX['end_of_song'])
         return final_data  # batch_size, seq_len
 
     def seq2seq_batch(self, batch_size, length, mode='train'):

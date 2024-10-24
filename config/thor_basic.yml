@@ -4,7 +4,7 @@ embedding_dim: 128
 num_layers: 6
 event_dim: 388
 fp16:
-pickle_dir: '../MusicTransformer/dataset/pre_processed'
+pickle_dir: 'dataset/preprocess'
 epochs: 500
 batch_size: 8
 load_path:
