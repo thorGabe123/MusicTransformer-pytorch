@@ -22,8 +22,10 @@ config.load(args.model_dir, args.configs, initialize=True)
 # check cuda
 if torch.cuda.is_available():
     config.device = torch.device('cuda')
+    print('Using CUDA')
 else:
     config.device = torch.device('cpu')
+    print('Using CPU')
 
 
 # load data
@@ -48,6 +50,7 @@ opt = optim.Adam(mt.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9)
 scheduler = CustomSchedule(config.embedding_dim, optimizer=opt)
 
 # multi-GPU set
+print("Number of GPUs:", torch.cuda.device_count())
 if torch.cuda.device_count() > 1:
     single_mt = mt
     mt = torch.nn.DataParallel(mt, output_device=torch.cuda.device_count()-1)
@@ -75,6 +78,7 @@ eval_summary_writer = SummaryWriter(eval_log_dir)
 # Train Start
 print(">> Train start...")
 idx = 0
+training_start_time = time.time()
 for e in range(config.epochs):
     print(">>> [Epoch was updated]")
     for b in range(len(dataset.files) // config.batch_size):
@@ -129,7 +133,7 @@ for e in range(config.epochs):
             print('\n====================================================')
             print('Epoch/Batch: {}/{}'.format(e, b))
             print('Train >>>> Loss: {:6.6}, Accuracy: {}'.format(metrics['loss'], metrics['accuracy']))
-            print('Eval >>>> Loss: {:6.6}, Accuracy: {}'.format(eval_metrics['loss'], eval_metrics['accuracy']))
+            print('Eval >>>> Loss: {:6.6}, Accuracy: {}'.format(eval_metrics['loss'], eval_metrics['accuracy']), flush=True)
         torch.cuda.empty_cache()
         idx += 1
 
@@ -140,6 +144,7 @@ for e in range(config.epochs):
         sw_end = time.time()
         if config.debug:
             print('output switch time: {}'.format(sw_end - sw_start) )
+    print('Time per epoch (seconds):', round((time.time() - training_start_time) / (e+1), 2), flush=True)
 
 torch.save(single_mt.state_dict(), args.model_dir+'/final.pth'.format(idx))
 eval_summary_writer.close()

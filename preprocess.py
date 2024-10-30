@@ -6,6 +6,7 @@ import utils
 import numpy as np
 from midi_processor.processor import encode_midi
 from midi_processor.processor import Event, _event_seq2snote_seq, _merge_note, encode_midi, decode_midi, START_IDX
+from custom.config import config
 
 
 def preprocess_midi(path):
@@ -17,7 +18,7 @@ def filter_note_on_events(temp_data):
     temp_events = []
     filtered_events = []         # The final list of events (filtered and non-filtered)
     time_shift_total = 0
-    
+
     for idx in temp_data:
         # Check if the event is a 'note_on' or 'note_off' event
         if idx in np.arange(START_IDX['note_on'], START_IDX['note_off']):
@@ -41,7 +42,7 @@ def filter_note_on_events(temp_data):
                 current_note_on_events = []  # Reset for the next group of note_on events
                 temp_events = []
                 time_shift_total = 0
-            
+
             elif current_note_on_events:
                 temp_events.append(idx)
 
@@ -57,6 +58,7 @@ def filter_note_on_events(temp_data):
     return filtered_events
 
 def preprocess_midi_files_under(midi_folder, preprocess_folder):
+    config.load('config', ['config/full.yml'])
     midi_paths = list(utils.find_files_by_extensions(midi_folder, ['.mid', '.midi']))
     os.makedirs(midi_folder, exist_ok=True)
     os.makedirs(preprocess_folder, exist_ok=True)
@@ -66,6 +68,8 @@ def preprocess_midi_files_under(midi_folder, preprocess_folder):
 
         try:
             data = preprocess_midi(path)
+            if len(data) <= config.max_seq:
+                continue
         except KeyboardInterrupt:
             print(' Abort')
             return
@@ -73,10 +77,13 @@ def preprocess_midi_files_under(midi_folder, preprocess_folder):
             print('EOF Error')
             return
 
-        with open('{}\\{}.pickle'.format(preprocess_folder, path.split('\\')[-1]), 'wb') as f:
+        file_name = os.path.split(path)[1]
+        new_path = os.path.join(preprocess_folder, file_name)
+
+        with open(new_path + '.pickle', 'wb') as f:
             pickle.dump(data, f)
 
 if __name__ == '__main__':
     preprocess_midi_files_under(
-            midi_root=sys.argv[1],
-            save_dir=sys.argv[2])
+            midi_folder=sys.argv[1],
+            preprocess_folder=sys.argv[2])
