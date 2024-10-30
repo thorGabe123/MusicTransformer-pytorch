@@ -1,0 +1,11 @@
+experiment: 'embedding256-layer6'
+l_r: 0.0001
+# head_size: 4 (??)
+num_layers: 6
+max_seq: 2048
+embedding_dim: 256
+batch_size: 2
+pickle_dir: '/scratch/s204461/jason-dataset/new_preprocessed_midi'
+epochs: 3500
+load_path:
+debug: False
