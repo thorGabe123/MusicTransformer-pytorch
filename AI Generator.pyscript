@@ -1,0 +1,46 @@
+import flpianoroll as flp
+import json
+import os
+from note import Note
+import time
+
+def new_note(number, time, length, velocity):
+    n = flp.Note()
+    n.number = number
+    n.time = time
+    n.length = length
+    n.velocity = velocity
+    flp.score.addNote(n)
+    
+notes = []
+if flp.score.noteCount > 0:
+    for note in range(flp.score.noteCount):
+        note_object = Note(
+                value = flp.score.getNote(note).number,
+                time = flp.score.getNote(note).time,
+                length = flp.score.getNote(note).length,
+                velocity = flp.score.getNote(note).velocity
+            )
+        notes.append(
+            note_object.to_dict()
+        )
+
+with open("monitored_folder/input.json", "w") as file:
+    json.dump(notes, file, indent=4)
+
+cnt = 0
+while not os.path.exists("monitored_folder/output.json"):
+    time.sleep(1)
+    cnt += 1
+    if cnt == 20:
+        break
+
+with open("monitored_folder/output.json", 'r') as file:
+    data = json.load(file)
+
+with open("monitored_folder/output.json", "w") as file:
+    json.dump({'delete':[]}, file, indent=4)
+
+flp.score.clear(True)
+for d in data:
+    new_note(number = d["value"], time = d["time"], length = d["length"], velocity = d["velocity"])
