@@ -28,12 +28,11 @@ def generate_sequence(sequence_list):
 
 def save2json(int_seq, version):
     if version == "thor":
-        note_seq = ints2notes(int_seq)
-        output = notes2json(note_seq)
+        new_notes = ints2notes(int_seq)
     if version == "philip":
         midi_notes = md.output_to_midi_notes(int_seq)
         new_notes = midi_note2note(midi_notes)
-        output = notes2json(new_notes)
+    output = notes2json(new_notes)
     with open("monitored_folder/output.json", "w") as file:
         json.dump(output, file, indent=4)
 
@@ -50,15 +49,13 @@ class FileUpdateHandler(FileSystemEventHandler):
             try:
                 data = json.load(file)  # Parse JSON
                 if isinstance(data, list):  # Ensure it's a list of integers for `generate_sequence`
+                    note_seq = json2notes(data)
                     if version == "thor":
-                        note_seq = json2notes(data)
-                        int_seq = notes2ints(note_seq)
-                        new_int_seq = generate_sequence(int_seq)
+                        token_seq = notes2ints(note_seq)
                     elif version == "philip":
-                        note_seq = json2notes(data)
                         midi_obj = note2midi_obj(note_seq)
-                        tokens = md.MidiFile(midi_obj).tokenize()
-                        new_int_seq = generate_sequence(tokens)
+                        token_seq = md.MidiFile(midi_obj).tokenize()
+                    new_int_seq = generate_sequence(token_seq)
                     save2json(new_int_seq, version=version)
                     time.sleep(2)
                     os.remove('monitored_folder/output.json')
