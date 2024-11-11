@@ -1,8 +1,0 @@
-CONFIG_FILE_NAME: save.yml
-device: cuda
-embedding_dim: 256
-event_dim: 388
-experiment: embedding256-layer6
-fp16: null
-max_seq: 2048
-num_layers: 6
