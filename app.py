@@ -15,9 +15,11 @@ config_global = load_config(f'config/config_global.yaml')
 model_version = config_global["model_version"]
 
 if model_version == "thor":
-    model.load_state_dict(torch.load('models/train_2.7861-val_2.7791.pth', map_location=device))
+    model.load_state_dict(torch.load('models/200000 + Finetuned all.pth', map_location=device))
+    piano_roll_folder_path = "C:/Users/Draco/Documents/Image-Line/FL Studio/Settings/Piano roll scripts"
 elif model_version == "philip":
     model.load_state_dict(torch.load('models/chord.pth', map_location=device))
+    piano_roll_folder_path = ""
 model = model.to(device)
 
 def generate_sequence(sequence_list):
@@ -33,7 +35,7 @@ def save2json(int_seq, version):
         midi_notes = md.output_to_midi_notes(int_seq)
         new_notes = midi_note2note(midi_notes)
     output = notes2json(new_notes)
-    with open("monitored_folder/output.json", "w") as file:
+    with open(f"{piano_roll_folder_path}/monitored_folder/output.json", "w") as file:
         json.dump(output, file, indent=4)
 
 class FileUpdateHandler(FileSystemEventHandler):
@@ -58,7 +60,7 @@ class FileUpdateHandler(FileSystemEventHandler):
                     new_int_seq = generate_sequence(token_seq)
                     save2json(new_int_seq, version=version)
                     time.sleep(2)
-                    os.remove('monitored_folder/output.json')
+                    os.remove(f'{piano_roll_folder_path}/monitored_folder/output.json')
                 else:
                     print("Error: JSON data in `input.json` should be a list of integers.")
             except json.JSONDecodeError:
@@ -80,5 +82,4 @@ def start_monitoring(folder_path):
 
 # Start monitoring the folder
 if __name__ == "__main__":
-    folder_path = "monitored_folder"
-    start_monitoring(folder_path)
+    start_monitoring(f'{piano_roll_folder_path}/monitored_folder')
