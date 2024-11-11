@@ -1,0 +1,32 @@
+[
+    {
+        "value": 76,
+        "time": 0,
+        "length": 48,
+        "velocity": 0.78125
+    },
+    {
+        "value": 75,
+        "time": 48,
+        "length": 48,
+        "velocity": 0.78125
+    },
+    {
+        "value": 76,
+        "time": 96,
+        "length": 48,
+        "velocity": 0.78125
+    },
+    {
+        "value": 75,
+        "time": 144,
+        "length": 48,
+        "velocity": 0.78125
+    },
+    {
+        "value": 76,
+        "time": 192,
+        "length": 48,
+        "velocity": 0.78125
+    }
+]

@@ -5,12 +5,19 @@ from model import BigramLanguageModel, generated_event_length
 import torch
 import json
 import os
-from processor import ints2notes, notes2ints, notes2json, json2notes
+from processor import ints2notes, notes2ints, notes2json, json2notes, note2midi_obj, midi_note2note, load_config
+import midi_data as md
 
 # Initialize model
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model = BigramLanguageModel()
-model.load_state_dict(torch.load('models/train_2.3394-val_2.3376.pth', map_location=device))
+config_global = load_config(f'config/config_global.yaml')
+model_version = config_global["model_version"]
+
+if model_version == "thor":
+    model.load_state_dict(torch.load('models/train_2.7861-val_2.7791.pth', map_location=device))
+elif model_version == "philip":
+    model.load_state_dict(torch.load('models/chord.pth', map_location=device))
 model = model.to(device)
 
 def generate_sequence(sequence_list):
@@ -19,36 +26,40 @@ def generate_sequence(sequence_list):
     output_sequence = model.generate(context, max_new_tokens=generated_event_length)[0].tolist()
     return output_sequence
 
-def save2json(int_seq):
-    note_seq = ints2notes(int_seq)
-    output = notes2json(note_seq)
+def save2json(int_seq, version):
+    if version == "thor":
+        note_seq = ints2notes(int_seq)
+        output = notes2json(note_seq)
+    if version == "philip":
+        midi_notes = md.output_to_midi_notes(int_seq)
+        new_notes = midi_note2note(midi_notes)
+        output = notes2json(new_notes)
     with open("monitored_folder/output.json", "w") as file:
         json.dump(output, file, indent=4)
 
 class FileUpdateHandler(FileSystemEventHandler):
-    def on_modified(self, event):
+    def on_modified(self, event, version=model_version):
         # Only trigger if `input.json` is modified
         if not event.is_directory and os.path.basename(event.src_path) == "input.json":
             print(f"`input.json` updated: {event.src_path}")
-            self.process_updated_file(event.src_path)
-        # if not event.is_directory and os.path.basename(event.src_path) == "output.json":
-        #     print(f"`output.json` updated: {event.src_path}")
-        #     self.delete_updated_file(event.src_path)
+            self.process_updated_file(event.src_path, version=version)
 
-    def delete_updated_file(self, filepath):
-        time.sleep(5)
-        os.remove(filepath)
-
-    def process_updated_file(self, filepath):
+    def process_updated_file(self, filepath, version):
         # Load JSON data from `input.json`
         with open(filepath, "r") as file:
             try:
                 data = json.load(file)  # Parse JSON
                 if isinstance(data, list):  # Ensure it's a list of integers for `generate_sequence`
-                    note_seq = json2notes(data)
-                    int_seq = notes2ints(note_seq)
-                    new_int_seq = generate_sequence(int_seq)
-                    save2json(new_int_seq)
+                    if version == "thor":
+                        note_seq = json2notes(data)
+                        int_seq = notes2ints(note_seq)
+                        new_int_seq = generate_sequence(int_seq)
+                    elif version == "philip":
+                        note_seq = json2notes(data)
+                        midi_obj = note2midi_obj(note_seq)
+                        tokens = md.MidiFile(midi_obj).tokenize()
+                        new_int_seq = generate_sequence(tokens)
+                    save2json(new_int_seq, version=version)
                     time.sleep(2)
                     os.remove('monitored_folder/output.json')
                 else:

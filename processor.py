@@ -2,13 +2,14 @@ import json
 import numpy as np
 from note import Note
 import pretty_midi
+import yaml
 
 RANGE_NOTES = 128
 RANGE_TIME_SHIFT = 64
 RANGE_LEN = 64
 RANGE_VEL = 100
-TICKS_PER_RES = 12
-TIME_PER_STEP = 1 / 16
+TICKS_PER_RES = 24
+TIME_PER_STEP = 1 / 8
 
 START_IDX = {
     'notes': 0,
@@ -17,6 +18,12 @@ START_IDX = {
     'velocity': RANGE_NOTES + RANGE_LEN + RANGE_TIME_SHIFT,
     'end_of_song': RANGE_NOTES + RANGE_LEN + RANGE_TIME_SHIFT + RANGE_VEL
 }
+
+def load_config(filepath):
+    """Loads configuration from a YAML file."""
+    with open(filepath, 'r') as file:
+        config = yaml.safe_load(file)
+    return config
 
 def sort_by_second_element(data):
     return sorted(data, key=lambda x: x[1])
@@ -32,6 +39,8 @@ def notes2json(note_list):
         n.length *= TICKS_PER_RES
         n.time *= TICKS_PER_RES
         n.velocity /= RANGE_VEL
+        n.length = int(n.length)
+        n.time = int(n.time)
         output.append(n.to_dict())
     return output
 
@@ -63,6 +72,30 @@ def midi_note2note(note_seq):
         new_note_seq.append(n)
     sorted_notes = sorted(new_note_seq, key=lambda note: note.time)
     return sorted_notes
+
+def note2midi_obj(note_seq):
+    prettymid_obj = pretty_midi.PrettyMIDI()
+    instrument = pretty_midi.Instrument(0)
+    new_note_seq = []
+
+    for note in note_seq:
+        # Reverse the operations from midi_note2note
+        pitch = note.value
+        start = note.time * TIME_PER_STEP
+        velocity = int(note.velocity * 1.28)
+        length = note.length
+        end = start + length * TIME_PER_STEP
+
+        # Create a new MIDI note object
+        midi_note = pretty_midi.Note(pitch=pitch, start=start, end=end, velocity=velocity)
+        new_note_seq.append(midi_note)
+
+    # Sort the MIDI notes by their start time
+    sorted_notes = sorted(new_note_seq, key=lambda note: note.start)
+    instrument.notes = sorted_notes
+    prettymid_obj.instruments.append(instrument)
+    return prettymid_obj
+
 
 def notes2ints(notes):
     prev_time = 0
