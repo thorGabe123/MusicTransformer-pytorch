@@ -8,15 +8,14 @@ RANGE_NOTES = 128
 RANGE_TIME_SHIFT = 64
 RANGE_LEN = 64
 RANGE_VEL = 100
-TICKS_PER_RES = 24
-TIME_PER_STEP = 1 / 8
+TICKS_PER_RES = 12
+TIME_PER_STEP = 1 / 16
 
 START_IDX = {
     'notes': 0,
     'length': RANGE_NOTES,
     'time_shift': RANGE_NOTES + RANGE_LEN,
-    'velocity': RANGE_NOTES + RANGE_LEN + RANGE_TIME_SHIFT,
-    'end_of_song': RANGE_NOTES + RANGE_LEN + RANGE_TIME_SHIFT + RANGE_VEL
+    'velocity': RANGE_NOTES + RANGE_LEN + RANGE_TIME_SHIFT
 }
 
 def load_config(filepath):
@@ -147,7 +146,7 @@ def encode_midi(path):
     mid = pretty_midi.PrettyMIDI(midi_file=path)
 
     for inst in mid.instruments:
-        channel = inst.program
+        # channel = inst.program
         # TODO add midi program/channel info here
         notes.extend(inst.notes)
 
@@ -166,7 +165,7 @@ def decode_midi(int_seq, file_path=None):
     note_seq = ints2notes(int_seq)
     midi_notes = []
     for n in note_seq:
-        midi_notes.append(pretty_midi.Note(velocity=int(n.velocity * 1.28), pitch=int(n.value), start=n.time * TIME_PER_STEP, end=(n.time + n.length) * TIME_PER_STEP))
+        midi_notes.append(pretty_midi.Note(velocity=int(n.velocity * 1.28), pitch=int(n.value), start=float(n.time * TIME_PER_STEP), end=float((n.time + n.length) * TIME_PER_STEP)))
     instument = pretty_midi.Instrument(1, False, "Developed By Thor Gabe")
     instument.notes = midi_notes
     mid = pretty_midi.PrettyMIDI()

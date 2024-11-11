@@ -15,18 +15,29 @@ config_global = load_config(f'config/config_global.yaml')
 model_version = config_global["model_version"]
 
 if model_version == "thor":
-    model.load_state_dict(torch.load('models/200000 + Finetuned all.pth', map_location=device))
+    model.load_state_dict(torch.load('models/train_2.0954-val_3.1085.pth', map_location=device))
     piano_roll_folder_path = "C:/Users/Draco/Documents/Image-Line/FL Studio/Settings/Piano roll scripts"
 elif model_version == "philip":
-    model.load_state_dict(torch.load('models/chord.pth', map_location=device))
-    piano_roll_folder_path = ""
+    model.load_state_dict(torch.load('models/train_0.0002-val_0.0002.pth', map_location=device))
+    piano_roll_folder_path = "C:/Users/Draco/Documents/Image-Line/FL Studio/Settings/Piano roll scripts"
 model = model.to(device)
 
 def generate_sequence(sequence_list):
+    # Set the composer metadata
+    composers = ['Bach', 'Beethoven', 'Chopin', 'Liszt', 'Mozart', 'Scarlatti', 'Schubert']
+    composer_name = "Beethoven"  # Choose the composer you want
+    composer_index = composers.index(composer_name)
+
+    # Prepare metadata input with the specified composer
+    metadata = {
+        "composer": torch.tensor([composer_index]).to(device)  # Metadata for a batch of 1
+    }
+
     # generate from the model
     context = torch.tensor([sequence_list], device=device)
-    output_sequence = model.generate(context, max_new_tokens=generated_event_length)[0].tolist()
-    return output_sequence
+    with torch.no_grad():
+        generated_sequence = model.generate(context, metadata, 200)
+    return generated_sequence[0].tolist()
 
 def save2json(int_seq, version):
     if version == "thor":

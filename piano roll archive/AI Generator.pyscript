@@ -32,14 +32,11 @@ cnt = 0
 while not os.path.exists("monitored_folder/output.json"):
     time.sleep(1)
     cnt += 1
-    if cnt == 20:
+    if cnt == 40:
         break
 
 with open("monitored_folder/output.json", 'r') as file:
     data = json.load(file)
-
-with open("monitored_folder/output.json", "w") as file:
-    json.dump({'delete':[]}, file, indent=4)
 
 flp.score.clear(True)
 for d in data:

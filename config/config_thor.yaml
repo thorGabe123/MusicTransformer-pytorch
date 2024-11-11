@@ -1,14 +1,15 @@
-batch_size: 8
-block_size: 128
+batch_size: 16
+block_size: 256
 max_iters: 1000000
 eval_interval: 100
 save_interval: 500
 learning_rate: 0.001
 eval_iters: 200
-n_embd: 128
-n_head: 4
-n_layer: 4
+n_embd: 256
+n_head: 8
+n_layer: 8
 dropout: 0.01
 vocab_size: 389
 device: "cuda"
 generated_event_length: 300
+metadata_dims: {"composer": 8}
