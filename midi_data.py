@@ -217,7 +217,7 @@ def visualize(midi_file: MidiFile, fs=100):
     plt.show()
 
 def get_tokens():
-    PATH = 'C:/Users/min/Documents/GitHub/MusicTransformer-pytorch 2024/dataset/midi/2008'
+    PATH = 'dataset/midi_piano_competition/2008'
 
     set_resolution(8)
     loader = MidiDataLoader(PATH)
