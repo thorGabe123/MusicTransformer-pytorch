@@ -15,13 +15,13 @@ config_global = load_config(f'config/config_global.yaml')
 model_version = config_global["model_version"]
 
 if model_version == "thor":
-    model.load_state_dict(torch.load('models/train_2.1258-val_2.2790.pth', map_location=device))
+    model.load_state_dict(torch.load('models/60000 With Metadata.pth', map_location=device))
     piano_roll_folder_path = "C:/Users/Draco/Documents/Image-Line/FL Studio/Settings/Piano roll scripts"
 elif model_version == "philip":
     model.load_state_dict(torch.load('models/train_0.0002-val_0.0002.pth', map_location=device))
     piano_roll_folder_path = "C:/Users/Draco/Documents/Image-Line/FL Studio/Settings/Piano roll scripts"
 model = model.to(device)
-
+ 
 def generate_sequence(sequence_list):
     # Set the composer metadata
     composers = ['Bach', 'Beethoven', 'Chopin', 'Liszt', 'Mozart', 'Scarlatti', 'Schubert']
