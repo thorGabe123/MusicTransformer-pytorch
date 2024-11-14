@@ -12,7 +12,7 @@ def new_note(number, time, length, velocity):
     n.velocity = velocity
     flp.score.addNote(n)
 
-form = flp.ScriptDialog("AI Music Generator", "A Temp Description")
+form = flp.ScriptDialog("AI Music Generator", "Generate the next notes in the style of your favorite classical composer.")
 form.AddInputCombo('Composer style',"Bach,Beethoven,Chopin,Liszt,Mozart,Scarlatti,Schubert",0)
 form.AddInputKnobInt('Generation length', 200, 50, 500)
 
