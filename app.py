@@ -15,19 +15,14 @@ config_global = load_config(f'config/config_global.yaml')
 model_version = config_global["model_version"]
 
 if model_version == "thor":
-    model.load_state_dict(torch.load('models/60000 With Metadata.pth', map_location=device))
+    model.load_state_dict(torch.load('models/train_2.0809-val_2.0834.pth', map_location=device))
     piano_roll_folder_path = "C:/Users/Draco/Documents/Image-Line/FL Studio/Settings/Piano roll scripts"
 elif model_version == "philip":
     model.load_state_dict(torch.load('models/train_0.0002-val_0.0002.pth', map_location=device))
     piano_roll_folder_path = "C:/Users/Draco/Documents/Image-Line/FL Studio/Settings/Piano roll scripts"
 model = model.to(device)
  
-def generate_sequence(sequence_list):
-    # Set the composer metadata
-    composers = ['Bach', 'Beethoven', 'Chopin', 'Liszt', 'Mozart', 'Scarlatti', 'Schubert']
-    composer_name = "Beethoven"  # Choose the composer you want
-    composer_index = composers.index(composer_name)
-
+def generate_sequence(sequence_list, composer_index, genLen):
     # Prepare metadata input with the specified composer
     metadata = {
         "composer": torch.tensor([composer_index]).to(device)  # Metadata for a batch of 1
@@ -36,7 +31,7 @@ def generate_sequence(sequence_list):
     # generate from the model
     context = torch.tensor([sequence_list], device=device)
     with torch.no_grad():
-        generated_sequence = model.generate(context, metadata, 200)
+        generated_sequence = model.generate(context, metadata, genLen)
     return generated_sequence[0].tolist()
 
 def save2json(int_seq, version):
@@ -61,14 +56,15 @@ class FileUpdateHandler(FileSystemEventHandler):
         with open(filepath, "r") as file:
             try:
                 data = json.load(file)  # Parse JSON
-                if isinstance(data, list):  # Ensure it's a list of integers for `generate_sequence`
-                    note_seq = json2notes(data)
+                data_notes, data_genLen, data_style = data['notes'], int(data['genLen']), int(data['style'])
+                if isinstance(data_notes, list):  # Ensure it's a list of integers for `generate_sequence`
+                    note_seq = json2notes(data_notes)
                     if version == "thor":
                         token_seq = notes2ints(note_seq)
                     elif version == "philip":
                         midi_obj = note2midi_obj(note_seq)
                         token_seq = md.MidiFile(midi_obj).tokenize()
-                    new_int_seq = generate_sequence(token_seq)
+                    new_int_seq = generate_sequence(token_seq, data_style, data_genLen)
                     save2json(new_int_seq, version=version)
                     time.sleep(2)
                     os.remove(f'{piano_roll_folder_path}/monitored_folder/output.json')

@@ -11,33 +11,46 @@ def new_note(number, time, length, velocity):
     n.length = length
     n.velocity = velocity
     flp.score.addNote(n)
-    
-notes = []
-if flp.score.noteCount > 0:
-    for note in range(flp.score.noteCount):
-        note_object = Note(
-                value = flp.score.getNote(note).number,
-                time = flp.score.getNote(note).time,
-                length = flp.score.getNote(note).length,
-                velocity = flp.score.getNote(note).velocity
+
+form = flp.ScriptDialog("AI Music Generator", "A Temp Description")
+form.AddInputCombo('Composer style',"Bach,Beethoven,Chopin,Liszt,Mozart,Scarlatti,Schubert",0)
+form.AddInputKnobInt('Generation length', 200, 50, 500)
+
+if form.Execute():
+    style = round(form.GetInputValue('Composer style'))
+    genLen = round(form.GetInputValue('Generation length'))
+    # ... do something here
+    notes = []
+    if flp.score.noteCount > 0:
+        for note in range(flp.score.noteCount):
+            note_object = Note(
+                    value = flp.score.getNote(note).number,
+                    time = flp.score.getNote(note).time,
+                    length = flp.score.getNote(note).length,
+                    velocity = flp.score.getNote(note).velocity
+                )
+            notes.append(
+                note_object.to_dict()
             )
-        notes.append(
-            note_object.to_dict()
-        )
 
-with open("monitored_folder/input.json", "w") as file:
-    json.dump(notes, file, indent=4)
+    allData = {}
+    allData['style'] = style
+    allData['genLen'] = genLen
+    allData['notes'] = notes
 
-cnt = 0
-while not os.path.exists("monitored_folder/output.json"):
-    time.sleep(1)
-    cnt += 1
-    if cnt == 40:
-        break
+    with open("monitored_folder/input.json", "w") as file:
+        json.dump(allData, file, indent=4)
 
-with open("monitored_folder/output.json", 'r') as file:
-    data = json.load(file)
+    cnt = 0
+    while not os.path.exists("monitored_folder/output.json"):
+        time.sleep(1)
+        cnt += 1
+        if cnt == 40:
+            break
 
-flp.score.clear(True)
-for d in data:
-    new_note(number = d["value"], time = d["time"], length = d["length"], velocity = d["velocity"])
+    with open("monitored_folder/output.json", 'r') as file:
+        data = json.load(file)
+
+    flp.score.clear(True)
+    for d in data:
+        new_note(number = d["value"], time = d["time"], length = d["length"], velocity = d["velocity"])
