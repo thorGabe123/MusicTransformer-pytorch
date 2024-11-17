@@ -88,7 +88,7 @@ class Data:
             data = pickle.load(f)
         if max_length is not None:
             if max_length <= len(data):
-                start = random.randrange(0,len(data) - max_length)
+                start = random.randrange(0,len(data) - max_length + 1)
                 data = data[start:start + max_length]
             else:
                 raise IndexError
