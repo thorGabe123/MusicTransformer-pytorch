@@ -51,11 +51,9 @@ scheduler = CustomSchedule(config.embedding_dim, optimizer=opt)
 
 # multi-GPU set
 print("Number of GPUs:", torch.cuda.device_count())
+single_mt = mt
 if torch.cuda.device_count() > 1:
-    single_mt = mt
     mt = torch.nn.DataParallel(mt, output_device=torch.cuda.device_count()-1)
-else:
-    single_mt = mt
 
 # init metric set
 metric_set = MetricsSet({

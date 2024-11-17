@@ -146,12 +146,11 @@ class CustomSchedule:
     def __init__(self, d_model, warmup_steps=4000, optimizer=None):
         super(CustomSchedule, self).__init__()
 
-        self.d_model = d_model
+        self.d_model = d_model # embedding_dim
         self.optimizer = optimizer
         self.warmup_steps = warmup_steps
 
         self._step = 0
-        self._rate = 0
 
     def step(self):
         "Update parameters and rate"
@@ -159,14 +158,11 @@ class CustomSchedule:
         rate = self.rate()
         for p in self.optimizer.param_groups:
             p['lr'] = rate
-        self._rate = rate
         self.optimizer.step()
 
-    def rate(self, step=None):
-        if step is None:
-            step = self._step
-        arg1 = step ** (-0.5)
-        arg2 = step * (self.warmup_steps ** -1.5)
+    def rate(self):
+        arg1 = self._step ** (-0.5)
+        arg2 = self._step * (self.warmup_steps ** -1.5)
 
         return self.d_model ** (-0.5) * min(arg1, arg2)
 
