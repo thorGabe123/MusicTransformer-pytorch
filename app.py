@@ -15,7 +15,7 @@ config_global = load_config(f'config/config_global.yaml')
 model_version = config_global["model_version"]
 
 if model_version == "thor":
-    model.load_state_dict(torch.load('models/train_2.0809-val_2.0834.pth', map_location=device))
+    model.load_state_dict(torch.load('models/train_2.1654-val_2.1974.pth', map_location=device))
     piano_roll_folder_path = "C:/Users/Draco/Documents/Image-Line/FL Studio/Settings/Piano roll scripts"
 elif model_version == "philip":
     model.load_state_dict(torch.load('models/train_0.0002-val_0.0002.pth', map_location=device))

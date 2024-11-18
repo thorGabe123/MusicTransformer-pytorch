@@ -151,6 +151,7 @@ class BigramLanguageModel(nn.Module):
             targets = targets.view(B * T)
             loss = F.cross_entropy(logits, targets)
 
+        logits = logits.view(B, T, -1)
         return logits, loss
 
     def generate(self, idx, metadata, max_new_tokens):
